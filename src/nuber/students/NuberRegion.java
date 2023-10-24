@@ -1,5 +1,8 @@
 package nuber.students;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
@@ -17,8 +20,12 @@ import java.util.concurrent.Future;
  *
  */
 public class NuberRegion {
-
-	
+	private NuberDispatch dispatch;
+	private String name;
+	private int maxSimultaneousJobs;
+	private boolean isShutDown = false;
+	private ExecutorService es;
+	private int finishedBooking;
 	/**
 	 * Creates a new Nuber region
 	 * 
@@ -26,10 +33,18 @@ public class NuberRegion {
 	 * @param regionName The regions name, unique for the dispatch instance
 	 * @param maxSimultaneousJobs The maximum number of simultaneous bookings the region is allowed to process
 	 */
-	public NuberRegion(NuberDispatch dispatch, String regionName, int maxSimultaneousJobs)
-	{
-		
+	public NuberRegion(NuberDispatch dispatch, String regionName, int maxSimultaneousJobs) {
+		this.dispatch = dispatch;
+		this.name = regionName;
+		this.maxSimultaneousJobs = maxSimultaneousJobs;
+		this.isShutDown = false;
+		this.es = Executors.newFixedThreadPool(maxSimultaneousJobs);
+		this.finishedBooking = 0;
+	}
 
+	public synchronized int addAndGetFinishedBookingID(){
+		finishedBooking+=1;
+		return finishedBooking;
 	}
 	
 	/**
@@ -43,9 +58,14 @@ public class NuberRegion {
 	 * @param waitingPassenger
 	 * @return a Future that will provide the final BookingResult object from the completed booking
 	 */
-	public Future<BookingResult> bookPassenger(Passenger waitingPassenger)
-	{		
-		
+	public Future<BookingResult> bookPassenger(Passenger waitingPassenger) {
+		if(isShutDown){
+			return null;
+		}else{
+			Booking b = new Booking(this.dispatch,waitingPassenger);
+			return es.submit((Callable<BookingResult>) new Task(b));
+		}
+
 	}
 	
 	/**
@@ -53,6 +73,21 @@ public class NuberRegion {
 	 */
 	public void shutdown()
 	{
+		isShutDown = true;
+		es.shutdown();
 	}
+
+	private class Task implements Callable{
+		private Booking b;
+		public Task(Booking b) {
+			this.b = b;
+		}
 		
+		@Override
+		public BookingResult call() throws Exception{
+			BookingResult result = b.call();
+			addAndGetFinishedBookingID();
+			return result;
+		}
+	}
 }
