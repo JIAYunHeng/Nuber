@@ -57,6 +57,7 @@ public class NuberDispatch {
 	public synchronized boolean addDriver(Driver newDriver)
 	{
 		boolean result = idleDrivers.add(newDriver);
+		this.notify();
 		return result;
 	}
 	
@@ -70,6 +71,7 @@ public class NuberDispatch {
 	public synchronized Driver getDriver() throws InterruptedException {
 		addBookingsAwaitingDriver();
 		while(idleDrivers.isEmpty()){
+			this.wait();
 		}
 		subBookingsAwaitingDriver();
 		return idleDrivers.poll();
