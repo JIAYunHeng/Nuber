@@ -63,6 +63,7 @@ public class NuberRegion {
 			return null;
 		}else{
 			Booking b = new Booking(this.dispatch,waitingPassenger);
+			dispatch.logEvent(b, "begin in region " + name);
 			return es.submit((Callable<BookingResult>) new Task(b));
 		}
 
@@ -87,6 +88,7 @@ public class NuberRegion {
 		public BookingResult call() throws Exception{
 			BookingResult result = b.call();
 			addAndGetFinishedBookingID();
+			dispatch.logEvent(b, "end in region " + name);
 			return result;
 		}
 	}
