@@ -5,7 +5,7 @@ public class Driver extends Person {
 	
 	public Driver(String driverName, int maxSleep)
 	{
-		super(Name, maxSleep);
+		super(driverName, maxSleep);
 	}
 	
 	/**
@@ -15,7 +15,7 @@ public class Driver extends Person {
 	 * @param newPassenger Passenger to collect
 	 * @throws InterruptedException
 	 */
-	public void pickUpPassenger(Passenger newPassenger)
+	public void pickUpPassenger(Passenger newPassenger) throws InterruptedException
 	{
 		curPax = newPassenger;
 		int pickUpTime = (int)(Math.random() * maxSleep);
@@ -28,7 +28,7 @@ public class Driver extends Person {
 	 * 
 	 * @throws InterruptedException
 	 */
-	public void driveToDestination() {
+	public void driveToDestination() throws InterruptedException {
 		Thread.sleep(curPax.getTravelTime());
 	}
 	
