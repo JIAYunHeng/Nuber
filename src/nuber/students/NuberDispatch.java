@@ -1,6 +1,8 @@
 package nuber.students;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.Future;
 
 /**
@@ -15,9 +17,20 @@ public class NuberDispatch {
 	 * The maximum number of idle drivers that can be awaiting a booking 
 	 */
 	private final int MAX_DRIVERS = 999;
-	
+	private int BookingsAwaitingDriver = 0;
 	private boolean logEvents = false;
-	
+	private HashMap<String,NuberRegion> regionInfo = new HashMap<>();
+	private Queue<Driver> idleDrivers = new LinkedList<Driver>();
+
+	public synchronized int addBookingsAwaitingDriver(){
+		BookingsAwaitingDriver+=1;
+		return BookingsAwaitingDriver;
+	}
+
+	public synchronized int subBookingsAwaitingDriver(){
+		BookingsAwaitingDriver-=1;
+		return BookingsAwaitingDriver;
+	}
 	/**
 	 * Creates a new dispatch objects and instantiates the required regions and any other objects required.
 	 * It should be able to handle a variable number of regions based on the HashMap provided.
@@ -27,6 +40,10 @@ public class NuberDispatch {
 	 */
 	public NuberDispatch(HashMap<String, Integer> regionInfo, boolean logEvents)
 	{
+		regionInfo.forEach((itemS,itemI)->{
+			this.regionInfo.put(itemS,new NuberRegion(this,itemS,itemI));
+		});
+		this.logEvents = logEvents;
 	}
 	
 	/**
@@ -37,8 +54,10 @@ public class NuberDispatch {
 	 * @param The driver to add to the queue.
 	 * @return Returns true if driver was added to the queue
 	 */
-	public boolean addDriver(Driver newDriver)
+	public synchronized boolean addDriver(Driver newDriver)
 	{
+		boolean result = idleDrivers.add(newDriver);
+		return result;
 	}
 	
 	/**
@@ -48,8 +67,12 @@ public class NuberDispatch {
 	 * 
 	 * @return A driver that has been removed from the queue
 	 */
-	public Driver getDriver()
-	{
+	public synchronized Driver getDriver() throws InterruptedException {
+		addBookingsAwaitingDriver();
+		while(idleDrivers.isEmpty()){
+		}
+		subBookingsAwaitingDriver();
+		return idleDrivers.poll();
 	}
 
 	/**
@@ -80,6 +103,7 @@ public class NuberDispatch {
 	 * @return returns a Future<BookingResult> object
 	 */
 	public Future<BookingResult> bookPassenger(Passenger passenger, String region) {
+		return regionInfo.get(region).bookPassenger(passenger);
 	}
 
 	/**
@@ -91,12 +115,16 @@ public class NuberDispatch {
 	 */
 	public int getBookingsAwaitingDriver()
 	{
+		return BookingsAwaitingDriver;
 	}
 	
 	/**
 	 * Tells all regions to finish existing bookings already allocated, and stop accepting new bookings
 	 */
 	public void shutdown() {
+		for (NuberRegion region : regionInfo.values()) {
+			region.shutdown();
+		}
 	}
 
 }
