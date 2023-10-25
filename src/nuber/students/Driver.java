@@ -1,7 +1,7 @@
 package nuber.students;
 
 public class Driver extends Person {
-	private Passenger curPax;
+	private Passenger curPax;//passenger currently being served by a driver
 	
 	public Driver(String driverName, int maxSleep)
 	{

@@ -57,7 +57,7 @@ public class NuberDispatch {
 	public synchronized boolean addDriver(Driver newDriver)
 	{
 		boolean result = idleDrivers.add(newDriver);
-		this.notify();
+		this.notify();//rouse the function getDriver
 		return result;
 	}
 	
@@ -71,7 +71,7 @@ public class NuberDispatch {
 	public synchronized Driver getDriver() throws InterruptedException {
 		addBookingsAwaitingDriver();
 		while(idleDrivers.isEmpty()){
-			this.wait();
+			this.wait();//Avoid getting stuck in empty loops
 		}
 		subBookingsAwaitingDriver();
 		return idleDrivers.poll();
@@ -124,6 +124,7 @@ public class NuberDispatch {
 	 * Tells all regions to finish existing bookings already allocated, and stop accepting new bookings
 	 */
 	public void shutdown() {
+		//shutdown every region
 		for (NuberRegion region : regionInfo.values()) {
 			region.shutdown();
 		}

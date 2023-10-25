@@ -74,7 +74,6 @@ public class Booking {
 			//4 driveToDestination
 			driver.driveToDestination();
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		//5 record time
