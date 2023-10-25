@@ -21,6 +21,7 @@ public class NuberDispatch {
 	private boolean logEvents = false;
 	private HashMap<String,NuberRegion> regionInfo = new HashMap<>();
 	private Queue<Driver> idleDrivers = new LinkedList<Driver>();
+	private boolean isShutDown = false;
 
 	public synchronized int addBookingsAwaitingDriver(){
 		BookingsAwaitingDriver+=1;
@@ -56,6 +57,13 @@ public class NuberDispatch {
 	 */
 	public synchronized boolean addDriver(Driver newDriver)
 	{
+		while(idleDrivers.size() == 999) {
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+		}
 		boolean result = idleDrivers.add(newDriver);
 		this.notify();//rouse the function getDriver
 		return result;
@@ -105,6 +113,9 @@ public class NuberDispatch {
 	 * @return returns a Future<BookingResult> object
 	 */
 	public Future<BookingResult> bookPassenger(Passenger passenger, String region) {
+		if(isShutDown) {
+			return null;
+		}
 		return regionInfo.get(region).bookPassenger(passenger);
 	}
 
@@ -124,6 +135,7 @@ public class NuberDispatch {
 	 * Tells all regions to finish existing bookings already allocated, and stop accepting new bookings
 	 */
 	public void shutdown() {
+		isShutDown = true;
 		//shutdown every region
 		for (NuberRegion region : regionInfo.values()) {
 			region.shutdown();
